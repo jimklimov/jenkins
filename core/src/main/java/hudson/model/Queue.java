@@ -1801,34 +1801,48 @@ public class Queue extends ResourceController implements Saveable {
             return false;
         }
 
-/*
-        Item i = getItem(task);
-        if (i != null) {
-            for (Cause c : i.getCauses()) {
-                if (c instanceof UpstreamCause) {
-                    /* FIXME? Iterate into upstream job instance(s)
-                     * referenced by the object to verify they are
-                     * running and so (maybe) blocked waiting for
-                     * this child task - which is why we let it pass
-                     * /
-                    UpstreamCause uc = (UpstreamCause) c;
-                    LOGGER.log(Level.FINE, "Item {0} is not blocked by pending " +
-                        "shutdown though it normally would be, because an " +
-                        "already allowed task {1} #{2} is waiting for it",
-                        new Object[] { task, uc.getUpstreamProject(), uc.getUpstreamBuild() });
-                    return false;
-                }
+        // Server is quieting down, and task is not non-blocking,
+        // and it is not spawned from an already running task
+        return true;
+    }
+
+    /**
+     * Checks whether a queue item should not be scheduled because {@link Jenkins#isQuietingDown()}.
+     * @param i some queue item
+     * @return true if {@link Jenkins#isQuietingDown()} unless this is a {@link NonBlockingTask}
+     *  or a task started by another (thus earlier allowed) task, to avoid stalling the server
+     * @since 1.598
+     */
+    public boolean isBlockedByShutdown(Item i) {
+        if (!isBlockedByShutdown(i.task)) {
+            // Server is quieting down, and task is not non-blocking,
+            // and it is not spawned from an already running task
+            return false;
+        }
+
+        // TODO: Check presence of NonBlockingItemAction in this item
+        // when we define one instead of directly probing build causes
+        for (Cause c : i.getCauses()) {
+            if (c instanceof UpstreamCause) {
+                // FIXME? Iterate into upstream job instance(s)
+                // referenced by the object to verify they are
+                // running and so (maybe) blocked waiting for
+                // this child task - which is why we let it pass
+                UpstreamCause uc = (UpstreamCause) c;
+                LOGGER.log(Level.FINE, "Item {0} is not blocked by pending " +
+                    "shutdown though it normally would be, because an " +
+                    "already allowed task {1} #{2} is waiting for it",
+                    new Object[] { i, uc.getUpstreamProject(), uc.getUpstreamBuild() });
+                return false;
             }
         }
-*/
 
         /* FIXME? Allow manually-scheduled jobs, maybe with
          * some (interactive?) enforcement option to do run
          * despite shutdown in progress?
          */
 
-        // Server is queting down, and task is not non-blocking,
-        // and it is not spawned from an already running task
+        // Nothing allowed exemptions, so build is blocked
         return true;
     }
 
