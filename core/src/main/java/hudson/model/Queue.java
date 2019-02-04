@@ -1792,14 +1792,16 @@ public class Queue extends ResourceController implements Saveable {
      * @since 1.598
      */
     public static boolean isBlockedByShutdown(Task task) {
+System.err.println("Evaluating isBlockedByShutdown() ...");
         if (! Jenkins.getInstance().isQuietingDown()) {
             // Server is not quieting down, blocking not applicable
             return false;
         }
-
+System.err.println("Server IS quieting down... Task is " + task.toString() );
         if (task instanceof NonBlockingTask) {
             return false;
         }
+System.err.println("Task is not non-blocking...");
 
         // Server is quieting down, and task is not non-blocking,
         // and it is not spawned from an already running task
