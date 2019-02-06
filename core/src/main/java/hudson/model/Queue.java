@@ -1792,16 +1792,17 @@ public class Queue extends ResourceController implements Saveable {
      * @since 1.598
      */
     public static boolean isBlockedByShutdown(Task task) {
-System.err.println("Evaluating isBlockedByShutdown() ...");
+System.err.println("Evaluating isBlockedByShutdown(Task) ...");
         if (! Jenkins.getInstance().isQuietingDown()) {
             // Server is not quieting down, blocking not applicable
+System.err.println("isBlockedByShutdown(Task) : Server is not quieting down, all clear" );
             return false;
         }
-System.err.println("Server IS quieting down... Task is " + task.toString() );
+System.err.println("isBlockedByShutdown(Task) : Server IS quieting down... Task is " + task.toString() );
         if (task instanceof NonBlockingTask) {
             return false;
         }
-System.err.println("Task is not non-blocking...");
+System.err.println("isBlockedByShutdown(Task) : Task is not non-blocking...");
 
         // Server is quieting down, and task is not non-blocking,
         // and it is not spawned from an already running task
@@ -1816,6 +1817,7 @@ System.err.println("Task is not non-blocking...");
      * @since 1.598
      */
     public static boolean isBlockedByShutdown(Item i) {
+System.err.println("Evaluating isBlockedByShutdown(Item) : " + i.toString());
         if (!isBlockedByShutdown(i.task)) {
             // Server is quieting down, and task is not non-blocking,
             // and it is not spawned from an already running task
@@ -1824,6 +1826,7 @@ System.err.println("Task is not non-blocking...");
 
         // TODO: Check presence of NonBlockingItemAction in this item
         // when we define one instead of directly probing build causes
+System.err.println("isBlockedByShutdown(Item) : Looking at build causes..." );
         for (Cause c : i.getCauses()) {
             if (c instanceof UpstreamCause) {
                 // FIXME? Iterate into upstream job instance(s)
@@ -1835,6 +1838,10 @@ System.err.println("Task is not non-blocking...");
                     "shutdown though it normally would be, because an " +
                     "already allowed task {1} #{2} is waiting for it",
                     new Object[] { i, uc.getUpstreamProject(), uc.getUpstreamBuild() });
+System.err.println("isBlockedByShutdown(Item) : Item " + i + "is not blocked by pending " +
+                    "shutdown though it normally would be, because an " +
+                    "already allowed task " + uc.getUpstreamProject() + " #" +
+                    uc.getUpstreamBuild() + " is waiting for it" );
                 return false;
             }
         }
@@ -1845,6 +1852,7 @@ System.err.println("Task is not non-blocking...");
          */
 
         // Nothing allowed exemptions, so build is blocked
+System.err.println("isBlockedByShutdown(Item) : Item and its Task are not exempt from not-building during quetDown...");
         return true;
     }
 
